@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash - Ranking Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gdGreen: '#00ff44',
+                        gdCyan: '#00ffff',
+                        gdYellow: '#ffea00',
+                        gdPink: '#ff007f',
+                        gdPurple: '#a855f7',
+                        gdDark: '#0a0d14',
+                        gdCard: '#121826',
+                        gdBorder: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Geometry Dash Background with Grid */
+        body {
+            background-color: #07090e;
+            background-image: 
+                linear-gradient(rgba(0, 255, 68, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 68, 0.05) 1px, transparent 1px),
+                radial-gradient(ellipse at top, #0f242e 0%, #06090e 70%);
+            background-size: 40px 40px, 40px 40px, 100% 100%;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .neon-border-green {
+            box-shadow: 0 0 15px rgba(0, 255, 68, 0.25), inset 0 0 15px rgba(0, 255, 68, 0.05);
+        }
+        .neon-border-cyan {
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.25);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 10px rgba(0, 255, 68, 0.6);
+        }
+        .neon-text-yellow {
+            text-shadow: 0 0 10px rgba(255, 234, 0, 0.6);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d121c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff44;
+        }
+
+        /* Floating cube animation */
+        @keyframes floatCube {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(90deg); }
+        }
+        .animated-cube {
+            animation: floatCube 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="text-slate-100 font-sans antialiased p-3 sm:p-6 lg:p-8 flex flex-col justify-between">
+
+    <!-- Header Section -->
+    <header class="max-w-5xl mx-auto w-full text-center mb-8">
+        <div class="inline-flex items-center gap-3 bg-gdCard/80 border border-gdGreen/30 px-5 py-2 rounded-full mb-3 backdrop-blur-md">
+            <span class="w-3 h-3 rounded-full bg-gdGreen animate-ping"></span>
+            <span class="text-xs uppercase tracking-widest font-bold text-gdGreen">GDBrowser API Synchronizer</span>
+        </div>
+        <div class="flex items-center justify-center gap-3">
+            <div class="w-10 h-10 bg-gdGreen text-black rounded-lg flex items-center justify-center font-black text-xl shadow-lg shadow-gdGreen/40 animated-cube">
+                ▲
+            </div>
+            <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white uppercase neon-text-green">
+                GD <span class="text-transparent bg-clip-text bg-gradient-to-r from-gdGreen via-gdCyan to-gdYellow">Auto Ranking</span>
+            </h1>
+        </div>
+        <p class="text-slate-400 mt-2 text-sm sm:text-base max-w-xl mx-auto">
+            Genera automáticamente la tabla de clasificación con formato especial para WhatsApp y Discord directamente de los perfiles de Geometry Dash.
+        </p>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
+        
+        <!-- Left Panel: Input & Player Manager (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-5">
+            <!-- Input Card -->
+            <div class="bg-gdCard/90 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur-md">
+                <h2 class="text-base font-bold text-gdCyan flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-user-plus text-xs"></i> Añadir Usuario
+                </h2>
+                
+                <form id="add-user-form" class="flex gap-2 mb-2" onsubmit="event.preventDefault(); addUser();">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500 text-sm">
+                            <i class="fa-solid fa-gamepad"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            id="username-input" 
+                            placeholder="ej. xstevenusf, robtop..." 
+                            autocomplete="off"
+                            class="w-full bg-slate-900/90 border border-slate-700 focus:border-gdGreen focus:ring-2 focus:ring-gdGreen/20 text-white rounded-xl pl-10 pr-3 py-2.5 text-sm transition-all outline-none font-mono"
+                        />
+                    </div>
+                    <button 
+                        type="submit" 
+                        class="bg-gdGreen hover:bg-[#00e63d] text-slate-950 font-bold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-gdGreen/20 active:scale-95 flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Agregar</span>
+                    </button>
+                </form>
+                <p class="text-xs text-slate-500">Se convertirá automáticamente a minúsculas.</p>
+            </div>
+
+            <!-- List Card -->
+            <div class="bg-gdCard/90 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur-md flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-gdGreen text-xs"></i> 
+                        Usuarios Seleccionados
+                        <span id="user-count-badge" class="bg-slate-800 text-gdCyan text-xs px-2 py-0.5 rounded-full font-mono border border-slate-700">0</span>
+                    </h2>
+                    <div class="flex gap-2">
+                        <button 
+                            onclick="clearUsers()" 
+                            title="Limpiar toda la lista"
+                            class="text-xs text-slate-400 hover:text-red-400 p-1.5 transition-colors">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chips Container -->
+                <div id="users-chips-container" class="flex flex-wrap gap-2 min-h-[140px] max-h-[220px] overflow-y-auto p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 mb-4 content-start">
+                    <!-- Dynamic chips injected here -->
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+                    <button 
+                        onclick="saveAsDefault()" 
+                        class="bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-700">
+                        <i class="fa-solid fa-floppy-disk text-gdYellow"></i> Guardar Default
+                    </button>
+                    <button 
+                        onclick="loadDefaults()" 
+                        class="bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-700">
+                        <i class="fa-solid fa-rotate-left text-gdCyan"></i> Cargar Guardados
+                    </button>
+                </div>
+
+                <!-- Big Generate Button -->
+                <button 
+                    id="btn-generate"
+                    onclick="generateRankings()" 
+                    class="mt-4 w-full bg-gradient-to-r from-gdGreen to-emerald-400 hover:from-[#00e63d] hover:to-emerald-300 text-slate-950 font-black py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-gdGreen/20 active:scale-[0.98] flex items-center justify-center gap-3 text-base uppercase tracking-wider">
+                    <i class="fa-solid fa-bolt text-lg"></i>
+                    <span>Generar Ranking</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Panel: Output & Live Progress (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-4">
+            <!-- Status Card / Loading Banner -->
+            <div id="status-card" class="hidden bg-slate-900 border border-gdCyan/40 rounded-2xl p-4 shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="status-text" class="text-sm font-semibold text-gdCyan flex items-center gap-2">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> Consultando perfiles...
+                    </span>
+                    <span id="status-progress" class="text-xs font-mono text-slate-400">0 / 0</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-gdGreen to-gdCyan h-2 transition-all duration-300 w-0"></div>
+                </div>
+            </div>
+
+            <!-- Ranking Output Box -->
+            <div class="bg-gdCard/95 border border-slate-800 rounded-2xl p-5 shadow-2xl backdrop-blur-md flex-1 flex flex-col relative">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-gdYellow"></span>
+                        <h2 class="text-lg font-bold text-white tracking-wide">
+                            Panel de Ranking & Métricas
+                        </h2>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Mode toggle: Text / Cards / Progress & Charts -->
+                        <div class="bg-slate-900 p-1 rounded-lg border border-slate-800 flex flex-wrap text-xs gap-1">
+                            <button id="view-text-btn" onclick="toggleView('text')" class="px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all">
+                                <i class="fa-solid fa-copy mr-1"></i> WhatsApp
+                            </button>
+                            <button id="view-visual-btn" onclick="toggleView('visual')" class="px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all">
+                                <i class="fa-solid fa-trophy mr-1"></i> Tarjetas
+                            </button>
+                            <button id="view-analytics-btn" onclick="toggleView('analytics')" class="px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all">
+                                <i class="fa-solid fa-chart-line mr-1"></i> Progreso & Gráficos
+                            </button>
+                        </div>
+
+                        <!-- Copy Button -->
+                        <button 
+                            id="btn-copy" 
+                            onclick="copyToClipboard()"
+                            class="bg-gdYellow hover:bg-yellow-400 text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 shadow-md shadow-gdYellow/20 active:scale-95 transition-all">
+                            <i class="fa-regular fa-copy"></i>
+                            <span id="copy-btn-text">Copiar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Format View (The requested WhatsApp output) -->
+                <div id="container-text-view" class="mt-4 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+                        <span>Filtros activos: <strong class="text-gdYellow">≥ 500 ⭐</strong> | <strong class="text-gdCyan">≥ 100 🌙</strong> | <strong class="text-red-400">≥ 1 😈</strong></span>
+                        <span class="font-mono text-[11px] text-slate-500">U+2007 Figure Spaces</span>
+                    </div>
+                    <textarea 
+                        id="ranking-output" 
+                        readonly 
+                        rows="18"
+                        placeholder="El ranking formateado aparecerá aquí una vez que des clic en 'Generar Ranking'..."
+                        class="w-full flex-1 bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 text-xs sm:text-sm font-mono text-emerald-300 leading-relaxed outline-none resize-none selection:bg-gdGreen selection:text-black"
+                    ></textarea>
+                </div>
+
+                <!-- Stylized Visual View (Interactive preview with cards) -->
+                <div id="container-visual-view" class="mt-4 flex-1 hidden overflow-y-auto max-h-[500px] pr-2 space-y-6">
+                    <div id="visual-stars-container"></div>
+                    <div id="visual-moons-container"></div>
+                    <div id="visual-demons-container"></div>
+                </div>
+
+                <!-- Analytics & Deltas View -->
+                <div id="container-analytics-view" class="mt-4 flex-1 hidden overflow-y-auto max-h-[530px] pr-2 space-y-6">
+                    <!-- Deltas Table Header & Controls -->
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-gdCyan flex items-center gap-2">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Cambios desde la última generación
+                                </h3>
+                                <p id="last-snapshot-label" class="text-xs text-slate-400 mt-0.5">
+                                    Sin registros previos aún.
+                                </p>
+                            </div>
+                            <button 
+                                onclick="resetHistory()" 
+                                class="text-xs bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-300 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar Comparativa
+                            </button>
+                        </div>
+
+                        <!-- Deltas Grid -->
+                        <div id="deltas-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
+                            <div class="col-span-full py-6 text-center text-xs text-slate-500">
+                                Genera el ranking al menos dos veces para ver la diferencia de estrellas, lunas y demons ganados.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Chart 1: Bar Chart Top Players -->
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-column text-gdGreen"></i> Comparativa de Estadísticas
+                            </h4>
+                            <div class="h-56 relative">
+                                <canvas id="chart-overview"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Gain / Deltas Chart -->
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-line text-gdYellow"></i> Ganancia en Último Periodo
+                            </h4>
+                            <div class="h-56 relative">
+                                <canvas id="chart-deltas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Toast Inside Box -->
+                <div id="toast-msg" class="hidden absolute bottom-6 right-6 bg-gdGreen text-slate-950 px-4 py-2 rounded-xl font-bold text-xs shadow-2xl flex items-center gap-2 z-20 transition-all">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>¡Copiado al portapapeles!</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-5xl mx-auto w-full text-center py-4 border-t border-slate-900 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>Datos obtenidos en vivo mediante la API de GDBrowser & Colon.</p>
+        <p class="font-mono text-slate-400">Geometry Dash Ranking Tool</p>
+    </footer>
+
+    <!-- App Logic -->
+    <script>
+        // Default seed users if empty
+        const INITIAL_DEFAULTS = ['xstevenusf', 'robtop', 'viprin', 'technical', 'evw', 'riot', 'guitarherostyles', 'nexus', 'npesta', 'dorami', 'knobbelboy'];
+
+        // State
+        let users = [];
+        let fetchedData = [];
+        let previousSnapshot = null;
+        let currentDeltas = [];
+        let currentView = 'text';
+
+        // Chart instances
+        let overviewChart = null;
+        let deltasChart = null;
+
+        // Load storage on start
+        window.onload = function() {
+            const saved = localStorage.getItem('gd_ranking_users');
+            if (saved) {
+                try {
+                    users = JSON.parse(saved);
+                } catch(e) {
+                    users = [...INITIAL_DEFAULTS];
+                }
+            } else {
+                users = [...INITIAL_DEFAULTS];
+            }
+
+            // Load last snapshot for comparison
+            const savedSnapshot = localStorage.getItem('gd_ranking_snapshot');
+            if (savedSnapshot) {
+                try {
+                    previousSnapshot = JSON.parse(savedSnapshot);
+                    updateSnapshotLabel();
+                } catch(e) {}
+            }
+
+            renderChips();
+        };
+
+        // Render chips for selected users
+        function renderChips() {
+            const container = document.getElementById('users-chips-container');
+            const badge = document.getElementById('user-count-badge');
+            
+            if (badge) badge.innerText = users.length;
+            if (!container) return;
+
+            if (users.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-500 italic m-auto py-4">No hay usuarios agregados aún.</span>`;
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <div class="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-700 hover:border-gdGreen/50 text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono transition-all group">
+                    <span>${user}</span>
+                    <button 
+                        onclick="removeUser('${user}')" 
+                        class="text-slate-500 hover:text-red-400 p-0.5 rounded transition-colors" 
+                        title="Eliminar usuario">
+                        <i class="fa-solid fa-xmark text-[11px]"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Add a user to list
+        function addUser() {
+            const input = document.getElementById('username-input');
+            if (!input) return;
+
+            const name = input.value.trim().toLowerCase().replace(/\s+/g, '');
+            if (!name) return;
+
+            if (users.includes(name)) {
+                showToastNotification('El usuario ya está en la lista.');
+                input.value = '';
+                return;
+            }
+
+            users.push(name);
+            input.value = '';
+            renderChips();
+        }
+
+        // Remove a user
+        function removeUser(userToRemove) {
+            users = users.filter(u => u !== userToRemove);
+            renderChips();
+        }
+
+        // Clear all users
+        function clearUsers() {
+            users = [];
+            renderChips();
+            showToastNotification('Lista limpiada.');
+        }
+
+        // Save current users as default in localStorage
+        function saveAsDefault() {
+            localStorage.setItem('gd_ranking_users', JSON.stringify(users));
+            showToastNotification('¡Lista guardada como predeterminada!');
+        }
+
+        // Load saved defaults or initial defaults
+        function loadDefaults() {
+            const saved = localStorage.getItem('gd_ranking_users');
+            if (saved) {
+                try {
+                    users = JSON.parse(saved);
+                } catch(e) {
+                    users = [...INITIAL_DEFAULTS];
+                }
+            } else {
+                users = [...INITIAL_DEFAULTS];
+            }
+            renderChips();
+            showToastNotification('Lista de guardados cargada.');
+        }
+
+        // Fetch user data from GDBrowser API with fallback proxy
+        async function fetchUserProfile(username) {
+            const cleanUser = encodeURIComponent(username.trim().toLowerCase());
+            const directUrl = `https://gdbrowser.com/api/profile/${cleanUser}`;
+            
+            // Try direct fetch first
+            try {
+                const res = await fetch(directUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && (data.username || data.accountID)) return data;
+                }
+            } catch (err) {
+                // If direct fetch is blocked by CORS, try fallback CORS proxy
+            }
+
+            // Fallback proxy (allorigins)
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
+                const res = await fetch(proxyUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && (data.username || data.accountID)) return data;
+                }
+            } catch (proxyErr) {
+                console.error(`Error al consultar perfil de ${username}:`, proxyErr);
+            }
+
+            return null;
+        }
+
+        // Copy text to clipboard
+        function copyToClipboard() {
+            const output = document.getElementById('ranking-output');
+            if (!output || !output.value) {
+                showToastNotification('Nada que copiar todavía.');
+                return;
+            }
+
+            output.select();
+            output.setSelectionRange(0, 99999);
+
+            let success = false;
+            try {
+                success = document.execCommand('copy');
+            } catch (err) {
+                success = false;
+            }
+
+            if (success) {
+                const copyBtnText = document.getElementById('copy-btn-text');
+                if (copyBtnText) copyBtnText.innerText = '¡Copiado!';
+                setTimeout(() => {
+                    if (copyBtnText) copyBtnText.innerText = 'Copiar';
+                }, 2000);
+                showToastNotification('¡Ranking copiado al portapapeles!');
+            } else {
+                showToastNotification('Error al copiar. Selecciona y copia manualmente.');
+            }
+        }
+
+        // Show toast notification
+        function showToastNotification(message) {
+            const toast = document.getElementById('toast-msg');
+            if (!toast) return;
+
+            toast.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i> <span>${message}</span>`;
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2500);
+        }
+
+        function updateSnapshotLabel() {
+            const label = document.getElementById('last-snapshot-label');
+            if (previousSnapshot && previousSnapshot.timestamp) {
+                const date = new Date(previousSnapshot.timestamp);
+                label.innerHTML = `Comparando contra: <strong class="text-gdGreen">${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong>`;
+            } else {
+                label.innerText = 'Sin registros previos guardados. Se creará una referencia al generar.';
+            }
+        }
+        // Main Ranking Generator function
+        async function generateRankings() {
+            if (users.length === 0) {
+                showToastNotification('Agrega al menos un usuario.');
+                return;
+            }
+
+            const btnGen = document.getElementById('btn-generate');
+            const statusCard = document.getElementById('status-card');
+            const statusText = document.getElementById('status-text');
+            const statusProgress = document.getElementById('status-progress');
+            const progressBar = document.getElementById('progress-bar');
+            const outputArea = document.getElementById('ranking-output');
+
+            btnGen.disabled = true;
+            btnGen.classList.add('opacity-50', 'cursor-not-allowed');
+            statusCard.classList.remove('hidden');
+            outputArea.value = 'Procesando perfiles de Geometry Dash...';
+
+            fetchedData = [];
+            const total = users.length;
+            let completed = 0;
+
+            for (const username of users) {
+                statusText.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Obteniendo: <span class="font-mono text-gdGreen font-bold">${username}</span>`;
+                statusProgress.innerText = `${completed + 1} / ${total}`;
+                progressBar.style.width = `${Math.round(((completed) / total) * 100)}%`;
+
+                const profile = await fetchUserProfile(username);
+
+                if (profile) {
+                    fetchedData.push({
+                        username: (profile.username || username).toLowerCase(),
+                        displayName: profile.username || username,
+                        stars: parseInt(profile.stars) || 0,
+                        moons: parseInt(profile.moons) || 0,
+                        demons: parseInt(profile.demons) || 0,
+                        diamonds: parseInt(profile.diamonds) || 0,
+                        coins: parseInt(profile.coins) || 0,
+                        userCoins: parseInt(profile.userCoins) || 0
+                    });
+                } else {
+                    // Profile was not found or failed
+                    fetchedData.push({
+                        username: username.toLowerCase(),
+                        displayName: username,
+                        stars: 0,
+                        moons: 0,
+                        demons: 0,
+                        error: true
+                    });
+                }
+
+                completed++;
+                progressBar.style.width = `${Math.round((completed / total) * 100)}%`;
+            }
+
+            statusText.innerHTML = `<i class="fa-solid fa-check text-gdGreen"></i> ¡Generación completada!`;
+            setTimeout(() => {
+                statusCard.classList.add('hidden');
+                btnGen.disabled = false;
+                btnGen.classList.remove('opacity-50', 'cursor-not-allowed');
+            }, 1200);
+
+            // Compute comparison Deltas with previous generation
+            computeDeltasAndSaveSnapshot(fetchedData);
+
+            // Build formatting with Thresholds:
+            // Stars: > 499 (>= 500)
+            // Moons: > 99  (>= 100)
+            // Demons: >= 1
+            const formattedText = buildFullFormattedText(fetchedData);
+            outputArea.value = formattedText;
+
+            // Render Visual Cards
+            renderVisualCards(fetchedData);
+
+            // Render Analytics / Charts
+            renderAnalyticsSection();
+        }
+
+        // Compare current fetchedData with previous saved snapshot
+        function computeDeltasAndSaveSnapshot(currentList) {
+            currentDeltas = [];
+            const prevMap = {};
+
+            if (previousSnapshot && previousSnapshot.players) {
+                previousSnapshot.players.forEach(p => {
+                    prevMap[p.username.toLowerCase()] = p;
+                });
+            }
+
+            currentList.forEach(curr => {
+                const prev = prevMap[curr.username.toLowerCase()];
+                if (prev) {
+                    const deltaStars = curr.stars - prev.stars;
+                    const deltaMoons = curr.moons - prev.moons;
+                    const deltaDemons = curr.demons - prev.demons;
+
+                    const pctStars = prev.stars > 0 ? ((deltaStars / prev.stars) * 100).toFixed(1) : 0;
+                    const pctMoons = prev.moons > 0 ? ((deltaMoons / prev.moons) * 100).toFixed(1) : 0;
+                    const pctDemons = prev.demons > 0 ? ((deltaDemons / prev.demons) * 100).toFixed(1) : 0;
+
+                    currentDeltas.push({
+                        username: curr.username,
+                        stars: curr.stars,
+                        deltaStars,
+                        pctStars,
+                        moons: curr.moons,
+                        deltaMoons,
+                        pctMoons,
+                        demons: curr.demons,
+                        deltaDemons,
+                        pctDemons,
+                        hasPrior: true
+                    });
+                } else {
+                    currentDeltas.push({
+                        username: curr.username,
+                        stars: curr.stars,
+                        deltaStars: 0,
+                        pctStars: 0,
+                        moons: curr.moons,
+                        deltaMoons: 0,
+                        pctMoons: 0,
+                        demons: curr.demons,
+                        deltaDemons: 0,
+                        pctDemons: 0,
+                        hasPrior: false
+                    });
+                }
+            });
+
+            // Save new snapshot to localStorage
+            const newSnapshot = {
+                timestamp: Date.now(),
+                players: currentList.map(item => ({
+                    username: item.username,
+                    stars: item.stars,
+                    moons: item.moons,
+                    demons: item.demons
+                }))
+            };
+
+            // Keep the previousSnapshot reference until saved, then update
+            localStorage.setItem('gd_ranking_snapshot', JSON.stringify(newSnapshot));
+            previousSnapshot = newSnapshot;
+            updateSnapshotLabel();
+        }
+
+        function resetHistory() {
+            localStorage.removeItem('gd_ranking_snapshot');
+            previousSnapshot = null;
+            currentDeltas = [];
+            updateSnapshotLabel();
+            renderAnalyticsSection();
+            showToastNotification('Historial de comparación reiniciado.');
+        }
+
+        /**
+         * Schema Formatter for WhatsApp / Discord with THRESHOLDS:
+         * Stars:  >= 500
+         * Moons:  >= 100
+         * Demons: >= 1
+         *
+         * Tree branches:
+         * If group length == 1: "━┉ "
+         * If group length > 1:
+         *   First item:  "┳┉ "
+         *   Middle item: "╋┉ "
+         *   Last item:   "┻┉ "
+         */
+        function buildFullFormattedText(data) {
+            // Apply minimum threshold filters:
+            const starsFiltered = data
+                .filter(item => item.stars >= 500)
+                .sort((a, b) => b.stars - a.stars);
+
+            const moonsFiltered = data
+                .filter(item => item.moons >= 100)
+                .sort((a, b) => b.moons - a.moons);
+
+            const demonsFiltered = data
+                .filter(item => item.demons >= 1)
+                .sort((a, b) => b.demons - a.demons);
+
+            const sectionStars = formatCategorySection(
+                '*⎯⎯⎯ ⭐ Members with the most stars ⭐⎯⎯⎯*',
+                '☆',
+                starsFiltered,
+                item => item.stars
+            );
+
+            const sectionMoons = formatCategorySection(
+                '*⎯⎯⎯ 🌙 Members with the most moons 🌙⎯⎯⎯*',
+                '🌙',
+                moonsFiltered,
+                item => item.moons
+            );
+
+            const sectionDemons = formatCategorySection(
+                '*⎯⎯⎯ 😈 Members with the most demons 😈⎯⎯⎯*',
+                '😈',
+                demonsFiltered,
+                item => item.demons
+            );
+
+            return `${sectionStars}\n\n${sectionMoons}\n\n${sectionDemons}`;
+        }
+
+        function formatCategorySection(headerTitle, statIcon, sortedList, valueExtractor) {
+            if (sortedList.length === 0) {
+                return `${headerTitle}\n(Ningún miembro cumple el requisito mínimo)`;
+            }
+
+            // Find maximum length of values to align with figure spaces (U+2007)
+            let maxDigits = 0;
+            sortedList.forEach(item => {
+                const valStr = String(valueExtractor(item));
+                if (valStr.length > maxDigits) maxDigits = valStr.length;
+            });
+
+            // Group 1: 1 to 3
+            // Group 2: 4 to 10
+            // Group 3: 11 onwards
+            const groups = [];
+            const g1 = sortedList.slice(0, 3);
+            if (g1.length > 0) groups.push({ offset: 1, items: g1 });
+
+            const g2 = sortedList.slice(3, 10);
+            if (g2.length > 0) groups.push({ offset: 4, items: g2 });
+
+            const g3 = sortedList.slice(10);
+            if (g3.length > 0) groups.push({ offset: 11, items: g3 });
+
+            const renderedBlocks = [];
+
+            groups.forEach(group => {
+                const totalInGroup = group.items.length;
+                const lines = [];
+
+                group.items.forEach((item, idx) => {
+                    const globalRank = group.offset + idx;
+                    const rankLabel = getRankPrefix(globalRank);
+                    
+                    // Tree connector
+                    let connector = '━┉ ';
+                    if (totalInGroup > 1) {
+                        if (idx === 0) {
+                            connector = '┳┉ ';
+                        } else if (idx === totalInGroup - 1) {
+                            connector = '┻┉ ';
+                        } else {
+                            connector = '╋┉ ';
+                        }
+                    }
+
+                    // Value with Figure Space padding (U+2007)
+                    const val = valueExtractor(item);
+                    const valStr = String(val);
+                    const paddingCount = Math.max(0, maxDigits - valStr.length);
+                    const paddedVal = '\u2007'.repeat(paddingCount) + valStr;
+
+                    // Assembly: 🥇┋ *☆ 90238* ┳┉ xstevenusf
+                    const line = `${rankLabel} *${statIcon} ${paddedVal}* ${connector}${item.username.toLowerCase()}`;
+                    lines.push(line);
+                });
+
+                renderedBlocks.push(lines.join('\n'));
+            });
+
+            return `${headerTitle}\n\n${renderedBlocks.join('\n\n')}`;
+        }
+
+        // Rank prefixes
+        function getRankPrefix(rank) {
+            switch(rank) {
+                case 1: return '🥇┋';
+                case 2: return '🥈┋';
+                case 3: return '🥉┋';
+                case 4: return '4️⃣┋';
+                case 5: return '5️⃣┋';
+                case 6: return '6️⃣┋';
+                case 7: return '7️⃣┋';
+                case 8: return '8️⃣┋';
+                case 9: return '9️⃣┋';
+                case 10: return '🔟┋';
+                default:
+                    return `${rank} ┋`;
+            }
+        }
+
+        // Toggle View between WhatsApp text, Visual cards, and Analytics
+        function toggleView(view) {
+            currentView = view;
+            const textContainer = document.getElementById('container-text-view');
+            const visualContainer = document.getElementById('container-visual-view');
+            const analyticsContainer = document.getElementById('container-analytics-view');
+
+            const btnText = document.getElementById('view-text-btn');
+            const btnVisual = document.getElementById('view-visual-btn');
+            const btnAnalytics = document.getElementById('view-analytics-btn');
+
+            // Reset buttons
+            [btnText, btnVisual, btnAnalytics].forEach(btn => {
+                btn.className = 'px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all';
+            });
+
+            textContainer.classList.add('hidden');
+            visualContainer.classList.add('hidden');
+            analyticsContainer.classList.add('hidden');
+
+            if (view === 'text') {
+                textContainer.classList.remove('hidden');
+                btnText.className = 'px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all';
+            } else if (view === 'visual') {
+                visualContainer.classList.remove('hidden');
+                btnVisual.className = 'px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all';
+            } else if (view === 'analytics') {
+                analyticsContainer.classList.remove('hidden');
+                btnAnalytics.className = 'px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all';
+                renderAnalyticsSection();
+            }
+        }
+
+        // Render graphical preview cards (respecting filters for consistency)
+        function renderVisualCards(data) {
+            if (data.length === 0) return;
+
+            const renderCategory = (title, icon, list, key, minThreshold, colorClass, borderClass) => {
+                const filtered = list.filter(item => item[key] >= minThreshold).sort((a, b) => b[key] - a[key]);
+                let html = `
+                    <div class="bg-slate-900/90 border ${borderClass} rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-bold uppercase tracking-wider ${colorClass} flex items-center gap-2">
+                                <span>${icon}</span> ${title}
+                            </h3>
+                            <span class="text-[11px] text-slate-500 font-mono">Mínimo: ${minThreshold}</span>
+                        </div>
+                        <div class="space-y-2">
+                `;
+
+                if (filtered.length === 0) {
+                    html += `<p class="text-xs text-slate-500 py-2 italic text-center">Ningún usuario cumple el filtro mínimo (${minThreshold})</p>`;
+                } else {
+                    filtered.forEach((item, i) => {
+                        let badge = `#${i + 1}`;
+                        if (i === 0) badge = '🥇 1';
+                        if (i === 1) badge = '🥈 2';
+                        if (i === 2) badge = '🥉 3';
+
+                        html += `
+                            <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-slate-950/70 border border-slate-800 text-xs font-mono">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-slate-400 w-8 font-bold">${badge}</span>
+                                    <span class="text-white font-semibold">${item.username}</span>
+                                </div>
+                                <span class="${colorClass} font-bold">${item[key].toLocaleString()}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                html += `</div></div>`;
+                return html;
+            };
+
+            document.getElementById('visual-stars-container').innerHTML = renderCategory('Top Stars', '⭐', data, 'stars', 500, 'text-gdYellow', 'border-yellow-500/30');
+            document.getElementById('visual-moons-container').innerHTML = renderCategory('Top Moons', '🌙', data, 'moons', 100, 'text-gdCyan', 'border-cyan-500/30');
+            document.getElementById('visual-demons-container').innerHTML = renderCategory('Top Demons', '😈', data, 'demons', 1, 'text-red-400', 'border-red-500/30');
+        }
+
+        // Render Analytics, Deltas and Chart.js instances
+        function renderAnalyticsSection() {
+            const container = document.getElementById('deltas-cards-container');
+            if (fetchedData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-6 text-center text-xs text-slate-500">
+                        Genera el ranking para calcular las estadísticas y gráficos.
+                    </div>`;
+                return;
+            }
+
+            // Render Deltas Cards
+            let deltasHtml = '';
+            currentDeltas.forEach(delta => {
+                const formatDeltaBadge = (value, pct, icon) => {
+                    if (value > 0) {
+                        return `<span class="text-emerald-400 font-bold bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-800/50">+${value} ${icon} <span class="text-[10px] opacity-75">(+${pct}%)</span></span>`;
+                    } else if (value < 0) {
+                        return `<span class="text-rose-400 font-bold bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-800/50">${value} ${icon} <span class="text-[10px] opacity-75">(${pct}%)</span></span>`;
+                    }
+                    return `<span class="text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded">0 ${icon}</span>`;
+                };
+
+                deltasHtml += `
+                    <div class="bg-slate-950/70 border border-slate-800 rounded-lg p-2.5 flex flex-col gap-1.5 font-mono text-xs">
+                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-1">
+                            <span class="font-bold text-white">${delta.username}</span>
+                            <span class="text-[10px] text-slate-400">${delta.hasPrior ? 'Comparado' : 'Primera vez'}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-1 text-[11px] flex-wrap">
+                            ${formatDeltaBadge(delta.deltaStars, delta.pctStars, '⭐')}
+                            ${formatDeltaBadge(delta.deltaMoons, delta.pctMoons, '🌙')}
+                            ${formatDeltaBadge(delta.deltaDemons, delta.pctDemons, '😈')}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = deltasHtml;
+
+            // Render or Update Chart.js: Overview Chart
+            renderCharts();
+        }
+
+        function renderCharts() {
+            if (fetchedData.length === 0) return;
+
+            const ctxOverview = document.getElementById('chart-overview').getContext('2d');
+            const ctxDeltas = document.getElementById('chart-deltas').getContext('2d');
+
+            // Top 8 users for overview
+            const topUsers = [...fetchedData].sort((a,b) => b.stars - a.stars).slice(0, 8);
+            const labels = topUsers.map(u => u.username);
+
+            if (overviewChart) overviewChart.destroy();
+            overviewChart = new Chart(ctxOverview, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Estrellas ⭐',
+                            data: topUsers.map(u => u.stars),
+                            backgroundColor: 'rgba(255, 234, 0, 0.7)',
+                            borderColor: '#ffea00',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Lunas 🌙',
+                            data: topUsers.map(u => u.moons),
+                            backgroundColor: 'rgba(0, 255, 255, 0.7)',
+                            borderColor: '#00ffff',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Demons 😈',
+                            data: topUsers.map(u => u.demons),
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+
+            // Deltas Chart: Gain in Stars and Demons
+            const deltasData = currentDeltas.slice(0, 8);
+            if (deltasChart) deltasChart.destroy();
+            deltasChart = new Chart(ctxDeltas, {
+                type: 'bar',
+                data: {
+                    labels: deltasData.map(d => d.username),
+                    datasets: [
+                        {
+                            label: 'Ganancia ⭐',
+                            data: deltasData.map(d => d.deltaStars),
+                            backgroundColor: 'rgba(0, 255, 68, 0.7)',
+                            borderColor: '#00ff44',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Ganancia 🌙',
+                            data: deltasData.map(d => d.deltaMoons),
+                            backgroundColor: 'rgba(56, 189, 248, 0.7)',
+                            borderColor: '#38bdf8',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Ganancia 😈',
+                            data: deltasData.map(d => d.deltaDemons),
+                            backgroundColor: 'rgba(168, 85, 247, 0.7)',
+                            borderColor: '#a855f7',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
