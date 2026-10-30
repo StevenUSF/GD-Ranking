@@ -632,7 +632,6 @@
         function buildFullFormattedText(data) {
             let text = "🏆 *GEOMETRY DASH RANKING* 🏆\n\n";
 
-            // Stars Ranking (All included)
             const sortedStars = [...data].sort((a, b) => b.stars - a.stars);
             text += "⭐ *RANKING DE ESTRELLAS* ⭐\n";
             sortedStars.forEach((p, idx) => {
@@ -640,7 +639,6 @@
             });
             text += "\n";
 
-            // Moons Ranking
             const sortedMoons = [...data].sort((a, b) => b.moons - a.moons);
             text += "🌙 *RANKING DE LUNAS* 🌙\n";
             sortedMoons.forEach((p, idx) => {
@@ -648,7 +646,6 @@
             });
             text += "\n";
 
-            // Demons Ranking
             const sortedDemons = [...data].sort((a, b) => b.demons - a.demons);
             text += "😈 *RANKING DE DEMONS* 😈\n";
             sortedDemons.forEach((p, idx) => {
@@ -810,3 +807,10 @@
                     scales: {
                         x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
                         y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
