@@ -38,7 +38,6 @@
         }
     </script>
     <style>
-        /* Geometry Dash Background with Grid */
         body {
             background-color: #07090e;
             background-image: 
@@ -49,12 +48,8 @@
             background-attachment: fixed;
             min-height: 100vh;
         }
-
         .neon-border-green {
             box-shadow: 0 0 15px rgba(0, 255, 68, 0.25), inset 0 0 15px rgba(0, 255, 68, 0.05);
-        }
-        .neon-border-cyan {
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.25);
         }
         .neon-text-green {
             text-shadow: 0 0 10px rgba(0, 255, 68, 0.6);
@@ -62,8 +57,6 @@
         .neon-text-yellow {
             text-shadow: 0 0 10px rgba(255, 234, 0, 0.6);
         }
-        
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -78,8 +71,6 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #00ff44;
         }
-
-        /* Floating cube animation */
         @keyframes floatCube {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-10px) rotate(90deg); }
@@ -218,7 +209,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <!-- Mode toggle: Text / Cards / Progress & Charts -->
+                        <!-- Mode toggle -->
                         <div class="bg-slate-900 p-1 rounded-lg border border-slate-800 flex flex-wrap text-xs gap-1">
                             <button id="view-text-btn" onclick="toggleView('text')" class="px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all">
                                 <i class="fa-solid fa-copy mr-1"></i> WhatsApp
@@ -242,10 +233,10 @@
                     </div>
                 </div>
 
-                <!-- Text Format View (The requested WhatsApp output) -->
+                <!-- Text Format View -->
                 <div id="container-text-view" class="mt-4 flex-1 flex flex-col">
                     <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
-                        <span>Filtros activos: <strong class="text-gdYellow">≥ 500 ⭐</strong> | <strong class="text-gdCyan">≥ 100 🌙</strong> | <strong class="text-red-400">≥ 1 😈</strong></span>
+                        <span>Sin restricciones de mínimos (se muestran todos los usuarios)</span>
                         <span class="font-mono text-[11px] text-slate-500">U+2007 Figure Spaces</span>
                     </div>
                     <textarea 
@@ -257,16 +248,15 @@
                     ></textarea>
                 </div>
 
-                <!-- Stylized Visual View (Interactive preview with cards) -->
+                <!-- Stylized Visual View -->
                 <div id="container-visual-view" class="mt-4 flex-1 hidden overflow-y-auto max-h-[500px] pr-2 space-y-6">
                     <div id="visual-stars-container"></div>
                     <div id="visual-moons-container"></div>
                     <div id="visual-demons-container"></div>
                 </div>
 
-                <!-- Analytics & Deltas View -->
+                <!-- Analytics View -->
                 <div id="container-analytics-view" class="mt-4 flex-1 hidden overflow-y-auto max-h-[530px] pr-2 space-y-6">
-                    <!-- Deltas Table Header & Controls -->
                     <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                             <div>
@@ -283,18 +273,14 @@
                                 <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar Comparativa
                             </button>
                         </div>
-
-                        <!-- Deltas Grid -->
                         <div id="deltas-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
                             <div class="col-span-full py-6 text-center text-xs text-slate-500">
-                                Genera el ranking al menos dos veces para ver la diferencia de estrellas, lunas y demons ganados.
+                                Genera el ranking al menos dos veces para ver la diferencia.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Charts Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Chart 1: Bar Chart Top Players -->
                         <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
                                 <i class="fa-solid fa-chart-column text-gdGreen"></i> Comparativa de Estadísticas
@@ -303,8 +289,6 @@
                                 <canvas id="chart-overview"></canvas>
                             </div>
                         </div>
-
-                        <!-- Chart 2: Gain / Deltas Chart -->
                         <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2 flex items-center gap-1.5">
                                 <i class="fa-solid fa-chart-line text-gdYellow"></i> Ganancia en Último Periodo
@@ -316,7 +300,7 @@
                     </div>
                 </div>
 
-                <!-- Notification Toast Inside Box -->
+                <!-- Notification Toast -->
                 <div id="toast-msg" class="hidden absolute bottom-6 right-6 bg-gdGreen text-slate-950 px-4 py-2 rounded-xl font-bold text-xs shadow-2xl flex items-center gap-2 z-20 transition-all">
                     <i class="fa-solid fa-circle-check"></i>
                     <span>¡Copiado al portapapeles!</span>
@@ -333,21 +317,17 @@
 
     <!-- App Logic -->
     <script>
-        // Default seed users if empty
         const INITIAL_DEFAULTS = ['xstevenusf', 'robtop', 'viprin', 'technical', 'evw', 'riot', 'guitarherostyles', 'nexus', 'npesta', 'dorami', 'knobbelboy'];
 
-        // State
         let users = [];
         let fetchedData = [];
         let previousSnapshot = null;
         let currentDeltas = [];
         let currentView = 'text';
 
-        // Chart instances
         let overviewChart = null;
         let deltasChart = null;
 
-        // Load storage on start
         window.onload = function() {
             const saved = localStorage.getItem('gd_ranking_users');
             if (saved) {
@@ -360,7 +340,6 @@
                 users = [...INITIAL_DEFAULTS];
             }
 
-            // Load last snapshot for comparison
             const savedSnapshot = localStorage.getItem('gd_ranking_snapshot');
             if (savedSnapshot) {
                 try {
@@ -372,7 +351,6 @@
             renderChips();
         };
 
-        // Render chips for selected users
         function renderChips() {
             const container = document.getElementById('users-chips-container');
             const badge = document.getElementById('user-count-badge');
@@ -398,7 +376,6 @@
             `).join('');
         }
 
-        // Add a user to list
         function addUser() {
             const input = document.getElementById('username-input');
             if (!input) return;
@@ -417,26 +394,22 @@
             renderChips();
         }
 
-        // Remove a user
         function removeUser(userToRemove) {
             users = users.filter(u => u !== userToRemove);
             renderChips();
         }
 
-        // Clear all users
         function clearUsers() {
             users = [];
             renderChips();
             showToastNotification('Lista limpiada.');
         }
 
-        // Save current users as default in localStorage
         function saveAsDefault() {
             localStorage.setItem('gd_ranking_users', JSON.stringify(users));
             showToastNotification('¡Lista guardada como predeterminada!');
         }
 
-        // Load saved defaults or initial defaults
         function loadDefaults() {
             const saved = localStorage.getItem('gd_ranking_users');
             if (saved) {
@@ -452,23 +425,18 @@
             showToastNotification('Lista de guardados cargada.');
         }
 
-        // Fetch user data from GDBrowser API with fallback proxy
         async function fetchUserProfile(username) {
             const cleanUser = encodeURIComponent(username.trim().toLowerCase());
             const directUrl = `https://gdbrowser.com/api/profile/${cleanUser}`;
             
-            // Try direct fetch first
             try {
                 const res = await fetch(directUrl);
                 if (res.ok) {
                     const data = await res.json();
                     if (data && (data.username || data.accountID)) return data;
                 }
-            } catch (err) {
-                // If direct fetch is blocked by CORS, try fallback CORS proxy
-            }
+            } catch (err) {}
 
-            // Fallback proxy (allorigins)
             try {
                 const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}`;
                 const res = await fetch(proxyUrl);
@@ -476,14 +444,11 @@
                     const data = await res.json();
                     if (data && (data.username || data.accountID)) return data;
                 }
-            } catch (proxyErr) {
-                console.error(`Error al consultar perfil de ${username}:`, proxyErr);
-            }
+            } catch (proxyErr) {}
 
             return null;
         }
 
-        // Copy text to clipboard
         function copyToClipboard() {
             const output = document.getElementById('ranking-output');
             if (!output || !output.value) {
@@ -513,7 +478,6 @@
             }
         }
 
-        // Show toast notification
         function showToastNotification(message) {
             const toast = document.getElementById('toast-msg');
             if (!toast) return;
@@ -532,10 +496,10 @@
                 const date = new Date(previousSnapshot.timestamp);
                 label.innerHTML = `Comparando contra: <strong class="text-gdGreen">${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong>`;
             } else {
-                label.innerText = 'Sin registros previos guardados. Se creará una referencia al generar.';
+                label.innerText = 'Sin registros previos guardados.';
             }
         }
-        // Main Ranking Generator function
+
         async function generateRankings() {
             if (users.length === 0) {
                 showToastNotification('Agrega al menos un usuario.');
@@ -561,7 +525,7 @@
             for (const username of users) {
                 statusText.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Obteniendo: <span class="font-mono text-gdGreen font-bold">${username}</span>`;
                 statusProgress.innerText = `${completed + 1} / ${total}`;
-                progressBar.style.width = `${Math.round(((completed) / total) * 100)}%`;
+                progressBar.style.width = `${Math.round((completed / total) * 100)}%`;
 
                 const profile = await fetchUserProfile(username);
 
@@ -577,7 +541,6 @@
                         userCoins: parseInt(profile.userCoins) || 0
                     });
                 } else {
-                    // Profile was not found or failed
                     fetchedData.push({
                         username: username.toLowerCase(),
                         displayName: username,
@@ -599,24 +562,15 @@
                 btnGen.classList.remove('opacity-50', 'cursor-not-allowed');
             }, 1200);
 
-            // Compute comparison Deltas with previous generation
             computeDeltasAndSaveSnapshot(fetchedData);
 
-            // Build formatting with Thresholds:
-            // Stars: > 499 (>= 500)
-            // Moons: > 99  (>= 100)
-            // Demons: >= 1
             const formattedText = buildFullFormattedText(fetchedData);
             outputArea.value = formattedText;
 
-            // Render Visual Cards
             renderVisualCards(fetchedData);
-
-            // Render Analytics / Charts
             renderAnalyticsSection();
         }
 
-        // Compare current fetchedData with previous saved snapshot
         function computeDeltasAndSaveSnapshot(currentList) {
             currentDeltas = [];
             const prevMap = {};
@@ -630,25 +584,14 @@
             currentList.forEach(curr => {
                 const prev = prevMap[curr.username.toLowerCase()];
                 if (prev) {
-                    const deltaStars = curr.stars - prev.stars;
-                    const deltaMoons = curr.moons - prev.moons;
-                    const deltaDemons = curr.demons - prev.demons;
-
-                    const pctStars = prev.stars > 0 ? ((deltaStars / prev.stars) * 100).toFixed(1) : 0;
-                    const pctMoons = prev.moons > 0 ? ((deltaMoons / prev.moons) * 100).toFixed(1) : 0;
-                    const pctDemons = prev.demons > 0 ? ((deltaDemons / prev.demons) * 100).toFixed(1) : 0;
-
                     currentDeltas.push({
                         username: curr.username,
                         stars: curr.stars,
-                        deltaStars,
-                        pctStars,
+                        deltaStars: curr.stars - prev.stars,
                         moons: curr.moons,
-                        deltaMoons,
-                        pctMoons,
+                        deltaMoons: curr.moons - prev.moons,
                         demons: curr.demons,
-                        deltaDemons,
-                        pctDemons,
+                        deltaDemons: curr.demons - prev.demons,
                         hasPrior: true
                     });
                 } else {
@@ -656,32 +599,20 @@
                         username: curr.username,
                         stars: curr.stars,
                         deltaStars: 0,
-                        pctStars: 0,
                         moons: curr.moons,
                         deltaMoons: 0,
-                        pctMoons: 0,
                         demons: curr.demons,
                         deltaDemons: 0,
-                        pctDemons: 0,
                         hasPrior: false
                     });
                 }
             });
 
-            // Save new snapshot to localStorage
-            const newSnapshot = {
-                timestamp: Date.now(),
-                players: currentList.map(item => ({
-                    username: item.username,
-                    stars: item.stars,
-                    moons: item.moons,
-                    demons: item.demons
-                }))
+            previousSnapshot = {
+                timestamp: new Date().getTime(),
+                players: currentList
             };
-
-            // Keep the previousSnapshot reference until saved, then update
-            localStorage.setItem('gd_ranking_snapshot', JSON.stringify(newSnapshot));
-            previousSnapshot = newSnapshot;
+            localStorage.setItem('gd_ranking_snapshot', JSON.stringify(previousSnapshot));
             updateSnapshotLabel();
         }
 
@@ -690,362 +621,192 @@
             previousSnapshot = null;
             currentDeltas = [];
             updateSnapshotLabel();
-            renderAnalyticsSection();
-            showToastNotification('Historial de comparación reiniciado.');
+            document.getElementById('deltas-cards-container').innerHTML = `
+                <div class="col-span-full py-6 text-center text-xs text-slate-500">
+                    Historial reiniciado. Genera el ranking nuevamente para establecer una nueva base.
+                </div>
+            `;
+            showToastNotification('Comparativa reiniciada.');
         }
 
-        /**
-         * Schema Formatter for WhatsApp / Discord with THRESHOLDS:
-         * Stars:  >= 500
-         * Moons:  >= 100
-         * Demons: >= 1
-         *
-         * Tree branches:
-         * If group length == 1: "━┉ "
-         * If group length > 1:
-         *   First item:  "┳┉ "
-         *   Middle item: "╋┉ "
-         *   Last item:   "┻┉ "
-         */
         function buildFullFormattedText(data) {
-            // Apply minimum threshold filters:
-            const starsFiltered = data
-                .filter(item => item.stars >= 500)
-                .sort((a, b) => b.stars - a.stars);
+            let text = "🏆 *GEOMETRY DASH RANKING* 🏆\n\n";
 
-            const moonsFiltered = data
-                .filter(item => item.moons >= 100)
-                .sort((a, b) => b.moons - a.moons);
+            // Stars Ranking (All included)
+            const sortedStars = [...data].sort((a, b) => b.stars - a.stars);
+            text += "⭐ *RANKING DE ESTRELLAS* ⭐\n";
+            sortedStars.forEach((p, idx) => {
+                text += `${idx + 1}. ${p.displayName}: ${p.stars} ⭐\n`;
+            });
+            text += "\n";
 
-            const demonsFiltered = data
-                .filter(item => item.demons >= 1)
-                .sort((a, b) => b.demons - a.demons);
+            // Moons Ranking
+            const sortedMoons = [...data].sort((a, b) => b.moons - a.moons);
+            text += "🌙 *RANKING DE LUNAS* 🌙\n";
+            sortedMoons.forEach((p, idx) => {
+                text += `${idx + 1}. ${p.displayName}: ${p.moons} 🌙\n`;
+            });
+            text += "\n";
 
-            const sectionStars = formatCategorySection(
-                '*⎯⎯⎯ ⭐ Members with the most stars ⭐⎯⎯⎯*',
-                '☆',
-                starsFiltered,
-                item => item.stars
-            );
-
-            const sectionMoons = formatCategorySection(
-                '*⎯⎯⎯ 🌙 Members with the most moons 🌙⎯⎯⎯*',
-                '🌙',
-                moonsFiltered,
-                item => item.moons
-            );
-
-            const sectionDemons = formatCategorySection(
-                '*⎯⎯⎯ 😈 Members with the most demons 😈⎯⎯⎯*',
-                '😈',
-                demonsFiltered,
-                item => item.demons
-            );
-
-            return `${sectionStars}\n\n${sectionMoons}\n\n${sectionDemons}`;
-        }
-
-        function formatCategorySection(headerTitle, statIcon, sortedList, valueExtractor) {
-            if (sortedList.length === 0) {
-                return `${headerTitle}\n(Ningún miembro cumple el requisito mínimo)`;
-            }
-
-            // Find maximum length of values to align with figure spaces (U+2007)
-            let maxDigits = 0;
-            sortedList.forEach(item => {
-                const valStr = String(valueExtractor(item));
-                if (valStr.length > maxDigits) maxDigits = valStr.length;
+            // Demons Ranking
+            const sortedDemons = [...data].sort((a, b) => b.demons - a.demons);
+            text += "😈 *RANKING DE DEMONS* 😈\n";
+            sortedDemons.forEach((p, idx) => {
+                text += `${idx + 1}. ${p.displayName}: ${p.demons} 😈\n`;
             });
 
-            // Group 1: 1 to 3
-            // Group 2: 4 to 10
-            // Group 3: 11 onwards
-            const groups = [];
-            const g1 = sortedList.slice(0, 3);
-            if (g1.length > 0) groups.push({ offset: 1, items: g1 });
-
-            const g2 = sortedList.slice(3, 10);
-            if (g2.length > 0) groups.push({ offset: 4, items: g2 });
-
-            const g3 = sortedList.slice(10);
-            if (g3.length > 0) groups.push({ offset: 11, items: g3 });
-
-            const renderedBlocks = [];
-
-            groups.forEach(group => {
-                const totalInGroup = group.items.length;
-                const lines = [];
-
-                group.items.forEach((item, idx) => {
-                    const globalRank = group.offset + idx;
-                    const rankLabel = getRankPrefix(globalRank);
-                    
-                    // Tree connector
-                    let connector = '━┉ ';
-                    if (totalInGroup > 1) {
-                        if (idx === 0) {
-                            connector = '┳┉ ';
-                        } else if (idx === totalInGroup - 1) {
-                            connector = '┻┉ ';
-                        } else {
-                            connector = '╋┉ ';
-                        }
-                    }
-
-                    // Value with Figure Space padding (U+2007)
-                    const val = valueExtractor(item);
-                    const valStr = String(val);
-                    const paddingCount = Math.max(0, maxDigits - valStr.length);
-                    const paddedVal = '\u2007'.repeat(paddingCount) + valStr;
-
-                    // Assembly: 🥇┋ *☆ 90238* ┳┉ xstevenusf
-                    const line = `${rankLabel} *${statIcon} ${paddedVal}* ${connector}${item.username.toLowerCase()}`;
-                    lines.push(line);
-                });
-
-                renderedBlocks.push(lines.join('\n'));
-            });
-
-            return `${headerTitle}\n\n${renderedBlocks.join('\n\n')}`;
+            return text;
         }
 
-        // Rank prefixes
-        function getRankPrefix(rank) {
-            switch(rank) {
-                case 1: return '🥇┋';
-                case 2: return '🥈┋';
-                case 3: return '🥉┋';
-                case 4: return '4️⃣┋';
-                case 5: return '5️⃣┋';
-                case 6: return '6️⃣┋';
-                case 7: return '7️⃣┋';
-                case 8: return '8️⃣┋';
-                case 9: return '9️⃣┋';
-                case 10: return '🔟┋';
-                default:
-                    return `${rank} ┋`;
-            }
-        }
-
-        // Toggle View between WhatsApp text, Visual cards, and Analytics
-        function toggleView(view) {
-            currentView = view;
-            const textContainer = document.getElementById('container-text-view');
-            const visualContainer = document.getElementById('container-visual-view');
-            const analyticsContainer = document.getElementById('container-analytics-view');
-
+        function toggleView(viewName) {
+            currentView = viewName;
             const btnText = document.getElementById('view-text-btn');
             const btnVisual = document.getElementById('view-visual-btn');
             const btnAnalytics = document.getElementById('view-analytics-btn');
 
-            // Reset buttons
-            [btnText, btnVisual, btnAnalytics].forEach(btn => {
-                btn.className = 'px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all';
-            });
+            const contText = document.getElementById('container-text-view');
+            const contVisual = document.getElementById('container-visual-view');
+            const contAnalytics = document.getElementById('container-analytics-view');
 
-            textContainer.classList.add('hidden');
-            visualContainer.classList.add('hidden');
-            analyticsContainer.classList.add('hidden');
+            btnText.className = "px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all";
+            btnVisual.className = "px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all";
+            btnAnalytics.className = "px-3 py-1 rounded-md text-slate-400 hover:text-white font-medium transition-all";
 
-            if (view === 'text') {
-                textContainer.classList.remove('hidden');
-                btnText.className = 'px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all';
-            } else if (view === 'visual') {
-                visualContainer.classList.remove('hidden');
-                btnVisual.className = 'px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all';
-            } else if (view === 'analytics') {
-                analyticsContainer.classList.remove('hidden');
-                btnAnalytics.className = 'px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all';
-                renderAnalyticsSection();
+            contText.classList.add('hidden');
+            contVisual.classList.add('hidden');
+            contAnalytics.classList.add('hidden');
+
+            if (viewName === 'text') {
+                btnText.className = "px-3 py-1 rounded-md bg-gdGreen text-black font-bold transition-all";
+                contText.classList.remove('hidden');
+            } else if (viewName === 'visual') {
+                btnVisual.className = "px-3 py-1 rounded-md bg-gdCyan text-black font-bold transition-all";
+                contVisual.classList.remove('hidden');
+            } else if (viewName === 'analytics') {
+                btnAnalytics.className = "px-3 py-1 rounded-md bg-gdYellow text-black font-bold transition-all";
+                contAnalytics.classList.remove('hidden');
             }
         }
 
-        // Render graphical preview cards (respecting filters for consistency)
         function renderVisualCards(data) {
-            if (data.length === 0) return;
+            const starsContainer = document.getElementById('visual-stars-container');
+            const moonsContainer = document.getElementById('visual-moons-container');
+            const demonsContainer = document.getElementById('visual-demons-container');
 
-            const renderCategory = (title, icon, list, key, minThreshold, colorClass, borderClass) => {
-                const filtered = list.filter(item => item[key] >= minThreshold).sort((a, b) => b[key] - a[key]);
-                let html = `
-                    <div class="bg-slate-900/90 border ${borderClass} rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-sm font-bold uppercase tracking-wider ${colorClass} flex items-center gap-2">
-                                <span>${icon}</span> ${title}
-                            </h3>
-                            <span class="text-[11px] text-slate-500 font-mono">Mínimo: ${minThreshold}</span>
+            const sortedStars = [...data].sort((a, b) => b.stars - a.stars);
+            const sortedMoons = [...data].sort((a, b) => b.moons - a.moons);
+            const sortedDemons = [...data].sort((a, b) => b.demons - a.demons);
+
+            starsContainer.innerHTML = `
+                <h3 class="text-sm font-bold text-gdYellow mb-3 flex items-center gap-2"><i class="fa-solid fa-star"></i> Estrellas</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    ${sortedStars.map((p, i) => `
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                            <span class="font-mono text-xs text-slate-400">#${i + 1}</span>
+                            <span class="font-bold text-white text-sm">${p.displayName}</span>
+                            <span class="font-mono text-gdYellow text-xs font-bold">${p.stars} ⭐</span>
                         </div>
-                        <div class="space-y-2">
-                `;
+                    `).join('')}
+                </div>
+            `;
 
-                if (filtered.length === 0) {
-                    html += `<p class="text-xs text-slate-500 py-2 italic text-center">Ningún usuario cumple el filtro mínimo (${minThreshold})</p>`;
-                } else {
-                    filtered.forEach((item, i) => {
-                        let badge = `#${i + 1}`;
-                        if (i === 0) badge = '🥇 1';
-                        if (i === 1) badge = '🥈 2';
-                        if (i === 2) badge = '🥉 3';
+            moonsContainer.innerHTML = `
+                <h3 class="text-sm font-bold text-gdCyan mb-3 flex items-center gap-2"><i class="fa-solid fa-moon"></i> Lunas</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    ${sortedMoons.map((p, i) => `
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                            <span class="font-mono text-xs text-slate-400">#${i + 1}</span>
+                            <span class="font-bold text-white text-sm">${p.displayName}</span>
+                            <span class="font-mono text-gdCyan text-xs font-bold">${p.moons} 🌙</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
 
-                        html += `
-                            <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-slate-950/70 border border-slate-800 text-xs font-mono">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-slate-400 w-8 font-bold">${badge}</span>
-                                    <span class="text-white font-semibold">${item.username}</span>
-                                </div>
-                                <span class="${colorClass} font-bold">${item[key].toLocaleString()}</span>
-                            </div>
-                        `;
-                    });
-                }
-
-                html += `</div></div>`;
-                return html;
-            };
-
-            document.getElementById('visual-stars-container').innerHTML = renderCategory('Top Stars', '⭐', data, 'stars', 500, 'text-gdYellow', 'border-yellow-500/30');
-            document.getElementById('visual-moons-container').innerHTML = renderCategory('Top Moons', '🌙', data, 'moons', 100, 'text-gdCyan', 'border-cyan-500/30');
-            document.getElementById('visual-demons-container').innerHTML = renderCategory('Top Demons', '😈', data, 'demons', 1, 'text-red-400', 'border-red-500/30');
+            demonsContainer.innerHTML = `
+                <h3 class="text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><i class="fa-solid fa-ghost"></i> Demons</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    ${sortedDemons.map((p, i) => `
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                            <span class="font-mono text-xs text-slate-400">#${i + 1}</span>
+                            <span class="font-bold text-white text-sm">${p.displayName}</span>
+                            <span class="font-mono text-red-400 text-xs font-bold">${p.demons} 😈</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
-        // Render Analytics, Deltas and Chart.js instances
         function renderAnalyticsSection() {
-            const container = document.getElementById('deltas-cards-container');
-            if (fetchedData.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-6 text-center text-xs text-slate-500">
-                        Genera el ranking para calcular las estadísticas y gráficos.
-                    </div>`;
-                return;
-            }
-
-            // Render Deltas Cards
-            let deltasHtml = '';
-            currentDeltas.forEach(delta => {
-                const formatDeltaBadge = (value, pct, icon) => {
-                    if (value > 0) {
-                        return `<span class="text-emerald-400 font-bold bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-800/50">+${value} ${icon} <span class="text-[10px] opacity-75">(+${pct}%)</span></span>`;
-                    } else if (value < 0) {
-                        return `<span class="text-rose-400 font-bold bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-800/50">${value} ${icon} <span class="text-[10px] opacity-75">(${pct}%)</span></span>`;
-                    }
-                    return `<span class="text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded">0 ${icon}</span>`;
-                };
-
-                deltasHtml += `
-                    <div class="bg-slate-950/70 border border-slate-800 rounded-lg p-2.5 flex flex-col gap-1.5 font-mono text-xs">
-                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-1">
-                            <span class="font-bold text-white">${delta.username}</span>
-                            <span class="text-[10px] text-slate-400">${delta.hasPrior ? 'Comparado' : 'Primera vez'}</span>
-                        </div>
-                        <div class="flex items-center justify-between gap-1 text-[11px] flex-wrap">
-                            ${formatDeltaBadge(delta.deltaStars, delta.pctStars, '⭐')}
-                            ${formatDeltaBadge(delta.deltaMoons, delta.pctMoons, '🌙')}
-                            ${formatDeltaBadge(delta.deltaDemons, delta.pctDemons, '😈')}
+            const deltasContainer = document.getElementById('deltas-cards-container');
+            if (currentDeltas.length > 0 && currentDeltas.some(d => d.hasPrior)) {
+                deltasContainer.innerHTML = currentDeltas.map(d => `
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-xs">
+                        <span class="font-bold text-white">${d.username}</span>
+                        <div class="flex gap-3 font-mono">
+                            <span class="${d.deltaStars >= 0 ? 'text-gdGreen' : 'text-red-400'}">${d.deltaStars >= 0 ? '+' : ''}${d.deltaStars} ⭐</span>
+                            <span class="${d.deltaMoons >= 0 ? 'text-gdCyan' : 'text-red-400'}">${d.deltaMoons >= 0 ? '+' : ''}${d.deltaMoons} 🌙</span>
+                            <span class="${d.deltaDemons >= 0 ? 'text-gdYellow' : 'text-red-400'}">${d.deltaDemons >= 0 ? '+' : ''}${d.deltaDemons} 😈</span>
                         </div>
                     </div>
+                `).join('');
+            } else {
+                deltasContainer.innerHTML = `
+                    <div class="col-span-full py-6 text-center text-xs text-slate-500">
+                        Primera generación registrada. Vuelve a generar más tarde para ver tu progreso.
+                    </div>
                 `;
-            });
-            container.innerHTML = deltasHtml;
+            }
 
-            // Render or Update Chart.js: Overview Chart
-            renderCharts();
-        }
-
-        function renderCharts() {
-            if (fetchedData.length === 0) return;
-
-            const ctxOverview = document.getElementById('chart-overview').getContext('2d');
-            const ctxDeltas = document.getElementById('chart-deltas').getContext('2d');
-
-            // Top 8 users for overview
-            const topUsers = [...fetchedData].sort((a,b) => b.stars - a.stars).slice(0, 8);
-            const labels = topUsers.map(u => u.username);
+            const topNames = fetchedData.slice(0, 6).map(p => p.displayName);
+            const topStars = fetchedData.slice(0, 6).map(p => p.stars);
 
             if (overviewChart) overviewChart.destroy();
+            const ctxOverview = document.getElementById('chart-overview').getContext('2d');
             overviewChart = new Chart(ctxOverview, {
                 type: 'bar',
                 data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Estrellas ⭐',
-                            data: topUsers.map(u => u.stars),
-                            backgroundColor: 'rgba(255, 234, 0, 0.7)',
-                            borderColor: '#ffea00',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Lunas 🌙',
-                            data: topUsers.map(u => u.moons),
-                            backgroundColor: 'rgba(0, 255, 255, 0.7)',
-                            borderColor: '#00ffff',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Demons 😈',
-                            data: topUsers.map(u => u.demons),
-                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                            borderColor: '#ef4444',
-                            borderWidth: 1
-                        }
-                    ]
+                    labels: topNames,
+                    datasets: [{
+                        label: 'Estrellas',
+                        data: topStars,
+                        backgroundColor: '#00ff44',
+                        borderRadius: 6
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } } }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
                         x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
-                        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
                     }
                 }
             });
 
-            // Deltas Chart: Gain in Stars and Demons
-            const deltasData = currentDeltas.slice(0, 8);
+            const deltaNames = currentDeltas.slice(0, 6).map(d => d.username);
+            const deltaValues = currentDeltas.slice(0, 6).map(d => d.deltaStars);
+
             if (deltasChart) deltasChart.destroy();
+            const ctxDeltas = document.getElementById('chart-deltas').getContext('2d');
             deltasChart = new Chart(ctxDeltas, {
-                type: 'bar',
+                type: 'line',
                 data: {
-                    labels: deltasData.map(d => d.username),
-                    datasets: [
-                        {
-                            label: 'Ganancia ⭐',
-                            data: deltasData.map(d => d.deltaStars),
-                            backgroundColor: 'rgba(0, 255, 68, 0.7)',
-                            borderColor: '#00ff44',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Ganancia 🌙',
-                            data: deltasData.map(d => d.deltaMoons),
-                            backgroundColor: 'rgba(56, 189, 248, 0.7)',
-                            borderColor: '#38bdf8',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Ganancia 😈',
-                            data: deltasData.map(d => d.deltaDemons),
-                            backgroundColor: 'rgba(168, 85, 247, 0.7)',
-                            borderColor: '#a855f7',
-                            borderWidth: 1
-                        }
-                    ]
+                    labels: deltaNames,
+                    datasets: [{
+                        label: 'Nuevas Estrellas',
+                        data: deltaValues,
+                        borderColor: '#ffea00',
+                        backgroundColor: 'rgba(255, 234, 0, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } } }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
                         x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
-                        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } }
-                    }
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
